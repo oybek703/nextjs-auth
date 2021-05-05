@@ -1,20 +1,22 @@
 import {useRef, useState} from 'react'
 import classes from './auth-form.module.css'
+import {signIn} from 'next-auth/client'
+import {useRouter} from 'next/router'
 
 function AuthForm() {
   const emailInputRef = useRef()
   const passwordInputRef = useRef()
   const [isLogin, setIsLogin] = useState(true)
-
+  const router = useRouter()
   function switchAuthModeHandler() {
     setIsLogin((prevState) => !prevState)
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
+    const email = emailInputRef.current.value
+    const password = passwordInputRef.current.value
     if(!isLogin) {
-      const email = emailInputRef.current.value
-      const password = passwordInputRef.current.value
       try {
         const res = await fetch('/api/auth/signup', {
           method: 'POST',
@@ -23,16 +25,27 @@ function AuthForm() {
             'Content-Type': 'application/json'
           }
         })
-        const data = await res.json()
+        const result = await res.json()
         if(!res.ok) {
-          throw new Error(data.message)
+          throw new Error(result.message)
         }
-        console.log(data)
         emailInputRef.current.value = ''
         passwordInputRef.current.value = ''
       } catch (e) {
         console.log(e)
       }
+    }
+    else {
+     const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password
+      })
+      if(!result.error) {
+        await router.replace('/profile')
+        return
+      }
+      console.log(result)
     }
   }
 
