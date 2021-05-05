@@ -1,24 +1,52 @@
-import { useState } from 'react';
-import classes from './auth-form.module.css';
+import {useRef, useState} from 'react'
+import classes from './auth-form.module.css'
 
 function AuthForm() {
-  const [isLogin, setIsLogin] = useState(true);
+  const emailInputRef = useRef()
+  const passwordInputRef = useRef()
+  const [isLogin, setIsLogin] = useState(true)
 
   function switchAuthModeHandler() {
-    setIsLogin((prevState) => !prevState);
+    setIsLogin((prevState) => !prevState)
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    if(!isLogin) {
+      const email = emailInputRef.current.value
+      const password = passwordInputRef.current.value
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          body: JSON.stringify({email, password}),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        const data = await res.json()
+        if(!res.ok) {
+          throw new Error(data.message)
+        }
+        console.log(data)
+        emailInputRef.current.value = ''
+        passwordInputRef.current.value = ''
+      } catch (e) {
+        console.log(e)
+      }
+    }
   }
 
   return (
     <section className={classes.auth}>
       <h1>{isLogin ? 'Login' : 'Sign Up'}</h1>
-      <form>
+      <form onSubmit={handleSubmit}>
         <div className={classes.control}>
           <label htmlFor='email'>Your Email</label>
-          <input type='email' id='email' required />
+          <input type='email' id='email' required ref={emailInputRef} />
         </div>
         <div className={classes.control}>
           <label htmlFor='password'>Your Password</label>
-          <input type='password' id='password' required />
+          <input type='password' id='password' required ref={passwordInputRef} />
         </div>
         <div className={classes.actions}>
           <button>{isLogin ? 'Login' : 'Create Account'}</button>
@@ -32,7 +60,7 @@ function AuthForm() {
         </div>
       </form>
     </section>
-  );
+  )
 }
 
-export default AuthForm;
+export default AuthForm
